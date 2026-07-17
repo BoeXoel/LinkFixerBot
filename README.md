@@ -65,6 +65,17 @@ edgeone/
 └─ package.json
 ```
 
+## Build settings (important)
+
+| Field | Value |
+|-------|--------|
+| Root directory | `./` (repo root) |
+| Build command | empty |
+| Install command | empty (or leave default) |
+| **Output directory** | **`public`** (not `pubic` — missing `l` will fail the build) |
+
+`edgeone.json` also sets `"outputDirectory": "public"` so the correct folder is used even if the console was mistyped.
+
 ## Setup
 
 ### 1. Create the bot

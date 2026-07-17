@@ -6,24 +6,21 @@ import {
 } from './privilege.js';
 import { escapeHtml } from './html.js';
 
+/** Public-facing only — never mention internal / admin capabilities. */
 const HELP = `🔗 <b>Link Fixer</b>
 
-Send a share link from <b>X/Twitter</b>, <b>Bluesky</b>, or <b>Zhihu</b> — I rewrite it to a public fix instance:
+Send a share link from <b>X/Twitter</b>, <b>Bluesky</b>, or <b>Zhihu</b> — I rewrite it to a public fix instance so previews work better in chat.
 
 • <code>x.com</code> → <code>fixupx.com</code>
 • <code>twitter.com</code> → <code>fxtwitter.com</code>
 • <code>bsky.app</code> → <code>fxbsky.app</code>
 • <code>zhihu.com</code> → <code>fxzhihu.com</code>
 
-⭐ <b>Privileged users</b>: for X posts with media, I also try to pull photos/videos via the FxEmbed API and send them as Telegram media (falls back to the link if that fails).
+Just paste one or more links. I only reply when a supported link is found.
 
 <b>Commands</b>
 /help — this message
-/whoami — your Telegram user id
-/status — whether you are privileged
-/grant &lt;user_id&gt; — grant privilege (privileged only)
-/revoke &lt;user_id&gt; — revoke privilege (privileged only)
-/list — list privileged user ids (privileged only)`;
+/whoami — your Telegram user id`;
 
 /**
  * @param {object} message
@@ -63,27 +60,23 @@ export async function handleCommand(message, ctx) {
       });
       return true;
 
+    // Internal commands: undocumented; silent no-op for non-privileged users.
     case '/status': {
-      const priv = await isPrivileged(fromId, config, kv);
+      if (!(await isPrivileged(fromId, config, kv))) return true;
       await api.sendMessage({
         chat_id: chatId,
-        text: priv
-          ? '⭐ You are on the privilege list (link convert + X media).'
-          : 'You are a normal user (link convert only).',
+        text: 'Privileged: link convert + X media extraction.',
       });
       return true;
     }
 
     case '/grant': {
-      if (!(await isPrivileged(fromId, config, kv))) {
-        await api.sendMessage({ chat_id: chatId, text: 'Not allowed.' });
-        return true;
-      }
+      if (!(await isPrivileged(fromId, config, kv))) return true;
       const target = parseUserId(arg, message);
       if (!target) {
         await api.sendMessage({
           chat_id: chatId,
-          text: 'Usage: /grant &lt;user_id&gt;  (or reply to a user with /grant)',
+          text: 'Usage: /grant &lt;user_id&gt;  (or reply with /grant)',
           parse_mode: 'HTML',
         });
         return true;
@@ -92,13 +85,13 @@ export async function handleCommand(message, ctx) {
         await grantPrivilege(target, `by ${fromId}`, kv);
         await api.sendMessage({
           chat_id: chatId,
-          text: `Granted privilege to <code>${target}</code>.`,
+          text: `Granted <code>${target}</code>.`,
           parse_mode: 'HTML',
         });
       } catch (e) {
         await api.sendMessage({
           chat_id: chatId,
-          text: `Grant failed: ${escapeHtml(e?.message || e)}. Bind KV as PRIV_KV?`,
+          text: `Grant failed: ${escapeHtml(e?.message || e)}`,
           parse_mode: 'HTML',
         });
       }
@@ -106,10 +99,7 @@ export async function handleCommand(message, ctx) {
     }
 
     case '/revoke': {
-      if (!(await isPrivileged(fromId, config, kv))) {
-        await api.sendMessage({ chat_id: chatId, text: 'Not allowed.' });
-        return true;
-      }
+      if (!(await isPrivileged(fromId, config, kv))) return true;
       const target = parseUserId(arg, message);
       if (!target) {
         await api.sendMessage({
@@ -123,7 +113,7 @@ export async function handleCommand(message, ctx) {
         await revokePrivilege(target, kv);
         await api.sendMessage({
           chat_id: chatId,
-          text: `Revoked privilege from <code>${target}</code>.`,
+          text: `Revoked <code>${target}</code>.`,
           parse_mode: 'HTML',
         });
       } catch (e) {
@@ -137,10 +127,7 @@ export async function handleCommand(message, ctx) {
     }
 
     case '/list': {
-      if (!(await isPrivileged(fromId, config, kv))) {
-        await api.sendMessage({ chat_id: chatId, text: 'Not allowed.' });
-        return true;
-      }
+      if (!(await isPrivileged(fromId, config, kv))) return true;
       try {
         const rows = await listPrivileged(kv);
         const boot = config.bootstrapPrivilegedIds || [];
@@ -157,11 +144,7 @@ export async function handleCommand(message, ctx) {
             );
           }
         }
-        if (!lines.length) {
-          lines.push(
-            'No privileged users yet. Set <code>BOOTSTRAP_PRIVILEGED_IDS</code> or bind KV.',
-          );
-        }
+        if (!lines.length) lines.push('(empty)');
         await api.sendMessage({
           chat_id: chatId,
           text: lines.join('\n'),
