@@ -1,10 +1,11 @@
-import {
-  isPrivileged,
-  grantPrivilege,
-  revokePrivilege,
-  listPrivileged,
-} from './privilege.js';
-import { escapeHtml } from './html.js';
+// Privilege admin cmds disabled while media extraction is off.
+// import {
+//   isPrivileged,
+//   grantPrivilege,
+//   revokePrivilege,
+//   listPrivileged,
+// } from './privilege.js';
+// import { escapeHtml } from './html.js';
 
 /** Public-facing only — never mention internal / admin capabilities. */
 const HELP = `🔗 <b>Link Fixer</b>
@@ -34,12 +35,12 @@ export async function handleCommand(message, ctx) {
   const text = (message.text || '').trim();
   if (!text.startsWith('/')) return false;
 
-  const [head, ...rest] = text.split(/\s+/);
+  const [head] = text.split(/\s+/);
   const cmd = head.split('@')[0].toLowerCase();
-  const arg = rest.join(' ').trim();
   const chatId = message.chat.id;
   const fromId = message.from?.id;
-  const { api, config, kv } = ctx;
+  const { api } = ctx;
+  // const { config, kv } = ctx;
 
   switch (cmd) {
     case '/start':
@@ -60,114 +61,21 @@ export async function handleCommand(message, ctx) {
       });
       return true;
 
-    // Internal commands: undocumented; silent no-op for non-privileged users.
-    case '/status': {
-      if (!(await isPrivileged(fromId, config, kv))) return true;
-      await api.sendMessage({
-        chat_id: chatId,
-        text: 'Privileged: link convert + X media extraction.',
-      });
-      return true;
-    }
-
-    case '/grant': {
-      if (!(await isPrivileged(fromId, config, kv))) return true;
-      const target = parseUserId(arg, message);
-      if (!target) {
-        await api.sendMessage({
-          chat_id: chatId,
-          text: 'Usage: /grant &lt;user_id&gt;  (or reply with /grant)',
-          parse_mode: 'HTML',
-        });
-        return true;
-      }
-      try {
-        await grantPrivilege(target, `by ${fromId}`, kv);
-        await api.sendMessage({
-          chat_id: chatId,
-          text: `Granted <code>${target}</code>.`,
-          parse_mode: 'HTML',
-        });
-      } catch (e) {
-        await api.sendMessage({
-          chat_id: chatId,
-          text: `Grant failed: ${escapeHtml(e?.message || e)}`,
-          parse_mode: 'HTML',
-        });
-      }
-      return true;
-    }
-
-    case '/revoke': {
-      if (!(await isPrivileged(fromId, config, kv))) return true;
-      const target = parseUserId(arg, message);
-      if (!target) {
-        await api.sendMessage({
-          chat_id: chatId,
-          text: 'Usage: /revoke &lt;user_id&gt;',
-          parse_mode: 'HTML',
-        });
-        return true;
-      }
-      try {
-        await revokePrivilege(target, kv);
-        await api.sendMessage({
-          chat_id: chatId,
-          text: `Revoked <code>${target}</code>.`,
-          parse_mode: 'HTML',
-        });
-      } catch (e) {
-        await api.sendMessage({
-          chat_id: chatId,
-          text: `Revoke failed: ${escapeHtml(e?.message || e)}`,
-          parse_mode: 'HTML',
-        });
-      }
-      return true;
-    }
-
-    case '/list': {
-      if (!(await isPrivileged(fromId, config, kv))) return true;
-      try {
-        const rows = await listPrivileged(kv);
-        const boot = config.bootstrapPrivilegedIds || [];
-        const lines = [];
-        if (boot.length) {
-          lines.push('<b>Bootstrap</b>');
-          for (const id of boot) lines.push(`• <code>${id}</code>`);
-        }
-        if (rows.length) {
-          lines.push('<b>KV</b>');
-          for (const r of rows) {
-            lines.push(
-              `• <code>${r.tgId}</code>${r.note ? ` — ${escapeHtml(r.note)}` : ''}`,
-            );
-          }
-        }
-        if (!lines.length) lines.push('(empty)');
-        await api.sendMessage({
-          chat_id: chatId,
-          text: lines.join('\n'),
-          parse_mode: 'HTML',
-        });
-      } catch (e) {
-        await api.sendMessage({
-          chat_id: chatId,
-          text: `List failed: ${escapeHtml(e?.message || e)}`,
-          parse_mode: 'HTML',
-        });
-      }
-      return true;
-    }
+    // --- Disabled with media privilege feature (restore with handle-message.js) ---
+    // case '/status':
+    // case '/grant':
+    // case '/revoke':
+    // case '/list':
+    //   … see git history / privilege.js
 
     default:
       return false;
   }
 }
 
-function parseUserId(arg, message) {
-  if (arg && /^\d+$/.test(arg)) return Number(arg);
-  const replyFrom = message.reply_to_message?.from?.id;
-  if (replyFrom) return Number(replyFrom);
-  return null;
-}
+// function parseUserId(arg, message) {
+//   if (arg && /^\d+$/.test(arg)) return Number(arg);
+//   const replyFrom = message.reply_to_message?.from?.id;
+//   if (replyFrom) return Number(replyFrom);
+//   return null;
+// }
