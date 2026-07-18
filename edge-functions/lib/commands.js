@@ -10,12 +10,13 @@
 /** Public-facing only — never mention internal / admin capabilities. */
 const HELP = `🔗 <b>Link Fixer</b>
 
-Send a share link from <b>X/Twitter</b>, <b>Bluesky</b>, or <b>Zhihu</b> — I rewrite it to a public fix instance so previews work better in chat.
+Send a share link — I rewrite it to a cleaner public URL:
 
 • <code>x.com</code> → <code>fixupx.com</code>
 • <code>twitter.com</code> → <code>fxtwitter.com</code>
 • <code>bsky.app</code> → <code>fxbsky.app</code>
 • <code>zhihu.com</code> → <code>fxzhihu.com</code>
+• <code>b23.tv</code> → clean <code>bilibili.com</code> (tracking removed)
 
 Just paste one or more links. I only reply when a supported link is found.
 

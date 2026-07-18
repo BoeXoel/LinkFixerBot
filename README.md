@@ -42,13 +42,14 @@ See [`.gitignore`](.gitignore): `node_modules/`, `.env*` (keeps `.env.example`),
 
 ## Features
 
-- **Everyone:** rewrite links  
-  - `x.com` → `fixupx.com`  
-  - `twitter.com` → `fxtwitter.com`  
-  - `bsky.app` → `fxbsky.app`  
+- Rewrite share links for everyone:
+  - `x.com` → `fixupx.com`
+  - `twitter.com` → `fxtwitter.com`
+  - `bsky.app` → `fxbsky.app`
   - `zhihu.com` → `fxzhihu.com` (incl. zhuanlan)
-- **Privileged users:** for X posts, call [FxEmbed API](https://docs.fxembed.com/api/twitter/),
-  download media, and re-upload to Telegram (falls back to URL send, then error text).
+  - `b23.tv` → clean `bilibili.com` (follow redirect, drop tracking params; keeps `p` / `t`)
+- Also strips tracking query params on long `bilibili.com` links when pasted directly.
+- (Optional / disabled) Privileged X media extraction — see commented code in `handle-message.js`.
 
 ## Layout
 

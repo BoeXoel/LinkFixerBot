@@ -17,5 +17,5 @@ For the Telegram Serverless archive, see [`../tgcloud`](../tgcloud).
 ## Behaviour
 
 1. Convert X / Bluesky / Zhihu share links to fix instances.
-2. Privileged users: FxEmbed status API → extract media → upload to Telegram.
-3. Fail soft: link conversion still works if media fails.
+2. Expand `b23.tv` via HTTP redirect → clean `bilibili.com` (`lib/bilibili.js`).
+3. Privileged X media extraction is **disabled** (commented in `handle-message.js`).

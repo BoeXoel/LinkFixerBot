@@ -7,7 +7,7 @@ import { convertMessageLinks } from './links.js';
 
 /**
  * Process a Telegram Message.
- * All users: rewrite social share links only.
+ * All users: rewrite social share links (incl. b23.tv → clean bilibili).
  *
  * X media extraction for privileged users is disabled (no API credentials;
  * Edge IPs hit CDN 401). Re-enable the block at the bottom if that changes.
@@ -26,7 +26,7 @@ export async function handleMessage(message, ctx) {
     if (handled) return;
   }
 
-  const links = convertMessageLinks(message);
+  const links = await convertMessageLinks(message);
   const social = links.filter((l) => l.kind !== 'other');
   if (!social.length) return;
 
