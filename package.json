@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Telegram link-fixer bot on EdgeOne Makers (Edge Functions)",
+  "license": "MIT",
   "scripts": {
     "dev": "edgeone makers dev",
     "deploy": "edgeone pages deploy"

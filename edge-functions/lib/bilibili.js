@@ -68,6 +68,11 @@ export function cleanBilibiliUrl(input) {
     u.searchParams.delete(key);
   }
 
+  // p=1 is the default first part — drop for shorter URLs; keep p>=2
+  if (u.searchParams.get('p') === '1') {
+    u.searchParams.delete('p');
+  }
+
   u.hash = '';
   // Normalize trailing noise
   let out = u.toString();
@@ -85,6 +90,7 @@ export function bilibiliNeedsClean(raw) {
     const u = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
     if (!isBilibiliHost(u.hostname)) return false;
     for (const key of u.searchParams.keys()) {
+      if (key === 'p' && u.searchParams.get('p') === '1') return true;
       if (!KEEP_QUERY.has(key)) return true;
     }
     return false;

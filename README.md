@@ -1,160 +1,116 @@
-# Link Fixer — EdgeOne Makers
+# Link Fixer
 
-Telegram bot that rewrites social share links to public fix instances, deployed on
-[EdgeOne Makers](https://pages.edgeone.ai/) Edge Functions (Cloudflare Workers–like).
+Telegram bot that rewrites social share links into cleaner public URLs.  
+Deployed on [EdgeOne Makers](https://pages.edgeone.ai/) **Edge Functions** (similar in spirit to Cloudflare Workers).
 
-## Publish this folder as a GitHub repo
-
-This directory is meant to be the **repository root** (not the parent monorepo).
-
-```bash
-cd edgeone   # or clone after you push only this tree
-
-git init
-git add .
-git status   # confirm .env is NOT listed
-
-git commit -m "Initial commit: Link Fixer EdgeOne bot"
-git branch -M main
-git remote add origin git@github.com:YOUR_USER/YOUR_REPO.git
-git push -u origin main
-```
-
-Then in EdgeOne Makers: **Import Git repository** → select this repo → deploy.
-
-**Do not commit secrets.** Use EdgeOne project environment variables for `BOT_TOKEN`,
-`WEBHOOK_SECRET`, and `BOOTSTRAP_PRIVILEGED_IDS`. See `.env.example`.
-
-### What is ignored
-
-See [`.gitignore`](.gitignore): `node_modules/`, `.env*` (keeps `.env.example`), `.edgeone/`, logs, OS/IDE junk.
-
-### Files you should keep in git
-
-| Path | Purpose |
-|------|---------|
-| `edge-functions/` | Webhook + bot logic |
-| `public/` | Static landing page |
-| `edgeone.json` | Project metadata |
-| `package.json` | Name / scripts (optional CLI) |
-| `.env.example` | Documented env keys only |
-| `README.md` | Deploy instructions |
+**Self-host this project.** The open-source tree is a template — run your own bot instance rather than treating someone else’s production bot as a free public service.
 
 ## Features
 
-- Rewrite share links for everyone:
-  - `x.com` → `fixupx.com`
-  - `twitter.com` → `fxtwitter.com`
-  - `bsky.app` → `fxbsky.app`
-  - `zhihu.com` → `fxzhihu.com` (incl. zhuanlan)
-  - `b23.tv` → clean `bilibili.com` (follow redirect, drop tracking params; keeps `p` / `t`)
-- Also strips tracking query params on long `bilibili.com` links when pasted directly.
-- (Optional / disabled) Privileged X media extraction — see commented code in `handle-message.js`.
+| Source | Result |
+|--------|--------|
+| `x.com` | `fixupx.com` |
+| `twitter.com` | `fxtwitter.com` |
+| `bsky.app` | `fxbsky.app` |
+| `zhihu.com` / `zhuanlan.zhihu.com` | `fxzhihu.com` / `zhuanlan.fxzhihu.com` |
+| `b23.tv` (and similar short hosts) | clean `bilibili.com` (tracking stripped) |
+| Long `bilibili.com` links with trackers | same cleaning (`p=1` dropped; `p≥2` and `t` kept) |
+
+- Replies with **plain URLs** only (easy to copy; no platform banners).
+- Silent when the message has no supported links.
+- Optional privileged X-media extraction exists in the tree but is **disabled** (see comments in `edge-functions/lib/handle-message.js`).
 
 ## Layout
 
 ```
-edgeone/
+.
 ├─ edge-functions/
 │  ├─ api/
-│  │  ├─ telegram.js   # webhook POST /api/telegram
-│  │  └─ health.js     # GET /api/health
-│  └─ lib/             # business logic
-├─ public/index.html   # landing page
+│  │  ├─ telegram.js    # POST /api/telegram (webhook)
+│  │  └─ health.js      # GET /api/health
+│  └─ lib/              # link rewrite, bilibili resolve, …
+├─ public/index.html    # optional landing page
 ├─ edgeone.json
 ├─ .env.example
+├─ LICENSE              # MIT
 └─ package.json
 ```
 
-## Build settings (important)
+Only `edge-functions/**/*.js` and static assets are needed at runtime. Secrets never belong in git.
+
+## Build settings (EdgeOne)
 
 | Field | Value |
 |-------|--------|
-| Root directory | `./` (repo root) |
-| Build command | empty |
-| Install command | empty (or leave default) |
-| **Output directory** | **`public`** (not `pubic` — missing `l` will fail the build) |
+| Root directory | `./` |
+| Build / install command | leave empty |
+| **Output directory** | **`public`** (not `pubic`) |
 
-`edgeone.json` also sets `"outputDirectory": "public"` so the correct folder is used even if the console was mistyped.
+`edgeone.json` sets `"outputDirectory": "public"`.
 
 ## Setup
 
-### 1. Create the bot
+### 1. Create a bot
 
-In [@BotFather](https://t.me/BotFather): `/newbot`, copy the **HTTP API token**.
+[@BotFather](https://t.me/BotFather) → `/newbot` → copy the **HTTP API token**.
 
-### 2. Configure EdgeOne
+### 2. Deploy on EdgeOne
 
-1. Create a Makers / Pages project from this folder (Git import or CLI).
-2. Set environment variables:
+1. Import this GitHub repo into [EdgeOne Makers](https://console.tencentcloud.com/edgeone/makers).
+2. Set environment variables (Project settings → **not** committed files):
 
 | Name | Required | Description |
 |------|----------|-------------|
 | `BOT_TOKEN` | yes | BotFather API token |
-| `WEBHOOK_SECRET` | recommended | Random string for `setWebhook` secret |
-| `BOOTSTRAP_PRIVILEGED_IDS` | recommended | Your numeric user id(s), comma-separated |
-| `MEDIA_MODE` | no | `upload` (default) or `url` |
-| `FX_TWITTER_API` | no | Default `https://api.fxtwitter.com` |
+| `WEBHOOK_SECRET` | recommended | Random string; must match `setWebhook` `secret_token` |
+| `BOOTSTRAP_PRIVILEGED_IDS` | no | Only if you re-enable privilege features |
+| `MEDIA_MODE` | no | Used only if media extraction is re-enabled |
 
-3. **KV (privilege list)**  
-   - Console → Storage → KV → create namespace  
-   - Bind to this project with variable name **`PRIV_KV`**  
-   - Without KV, only bootstrap IDs are privileged (`/grant` needs KV).
+3. Deploy and note the HTTPS origin (e.g. `https://your-app.edgeone.app`).
 
-### 3. Deploy
-
-```bash
-# optional local tooling
-npm install -g edgeone
-cd edgeone
-edgeone makers dev    # local debug (see EdgeOne docs)
-
-# deploy via Git push, console upload, or CLI — follow current EdgeOne docs
-```
-
-Note the public HTTPS origin, e.g. `https://link-fixer-xxxx.edgeone.app`.
-
-### 4. Point Telegram webhook
-
-Replace placeholders:
+### 3. Set the Telegram webhook
 
 ```bash
 export BOT_TOKEN='...'
-export WEBHOOK_SECRET='...'   # same as env
+export WEBHOOK_SECRET='...'   # same as EdgeOne env, if set
 export BASE='https://YOUR_DOMAIN'
 
-curl "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
-  -d "url=${BASE}/api/telegram" \
-  -d "secret_token=${WEBHOOK_SECRET}" \
-  -d "allowed_updates=[\"message\"]"
+curl -sS "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
+  --data-urlencode "url=${BASE}/api/telegram" \
+  --data-urlencode "secret_token=${WEBHOOK_SECRET}" \
+  --data-urlencode 'allowed_updates=["message"]'
 ```
-
-Check:
 
 ```bash
-curl "https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo"
+curl -sS "https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo"
 ```
 
-### 5. Smoke test
+### 4. Smoke test
 
-- Open the bot → `/start` or `/whoami`
-- Put your id in `BOOTSTRAP_PRIVILEGED_IDS`, redeploy
-- Send an `https://x.com/.../status/...` link
+- `GET https://YOUR_DOMAIN/api/health`
+- Telegram: `/start`, then paste an `x.com` or `b23.tv` link
 
 ## Commands
 
-| Command | Who | Action |
-|---------|-----|--------|
-| `/help` | all | help text |
-| `/whoami` | all | your Telegram id |
-| `/status` | all | privilege check |
-| `/grant <id>` | privileged | add to KV |
-| `/revoke <id>` | privileged | remove from KV |
-| `/list` | privileged | list bootstrap + KV |
+| Command | Action |
+|---------|--------|
+| `/help` | Public usage |
+| `/whoami` | Your Telegram numeric user id |
 
-## Notes
+## Security notes
 
-- Webhook body limit on Edge Functions is **1 MB** (fine for text link messages).
-- Media path uses **download + multipart upload** by default so Telegram does not need to fetch X CDNs itself.
-- `waitUntil` is used when available so Telegram gets a fast `ok` while media work continues.
-- Do not commit `.env` or real tokens.
+- Never commit `.env` or real tokens (see `.gitignore`).
+- Prefer `WEBHOOK_SECRET` so random clients cannot POST fake updates.
+- If a token leaks: BotFather → revoke → update EdgeOne env → `setWebhook` again.
+
+## Acknowledgments
+
+- [FxEmbed](https://github.com/FxEmbed/FxEmbed) — FixupX / FxTwitter / FxBluesky  
+- [fxzhihu](https://github.com/frostming/fxzhihu) — Zhihu fix instances  
+- [b23.tv-tools](https://github.com/SunsetMkt/b23.tv-tools), [b23.wtf](https://github.com/nicholascw/b23.wtf) — ideas for short-link expansion & tracking cleanup  
+- [EdgeOne Makers](https://pages.edgeone.ai/) — hosting  
+- Development assistance from **Grok** ([xAI](https://x.ai/)) — commits may include a `Co-authored-by` trailer so GitHub can attribute co-authorship
+
+## License
+
+[MIT](./LICENSE) © 2026 [Boe Xoel](https://github.com/BoeXoel)
