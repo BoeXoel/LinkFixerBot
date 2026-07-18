@@ -1,21 +1,32 @@
-# AGENTS.md — EdgeOne deployment
+# AGENTS.md — Link Fixer (EdgeOne)
 
-Telegram link-fixer bot on **EdgeOne Makers Edge Functions**.
+Orientation for AI coding assistants working in this repository.
 
-Guidance for AI/agent contributors in this repository (self-contained; no sibling monorepo paths).
+## What this is
+
+A Telegram **link-fixer** bot on EdgeOne Edge Functions: rewrite share links to cleaner public URLs. Optional allowlist (`PRIVILEGED_ONLY`).
+
+## Layout
+
+| Path | Role |
+|------|------|
+| `edge-functions/api/telegram.js` | Webhook entry |
+| `edge-functions/lib/links.js` | Sync rewrites + async b23 resolution |
+| `edge-functions/lib/bilibili.js` | b23 expand + bilibili tracker strip |
+| `edge-functions/lib/privilege.js` | Allowlist (env + optional KV) |
+| `edge-functions/lib/config.js` | Env → config (`PRIVILEGED_ONLY`, …) |
+| `public/` | Static landing only |
 
 ## Rules
 
-- Runtime is Edge (Web APIs): `fetch`, `Request`, `Response`, `FormData`, `Blob`.
-- No Node built-ins unless you move code to `cloud-functions/`.
-- Import helpers with **relative paths** under `edge-functions/` (e.g. `../lib/links.js`).
-- Secrets live in env: `BOT_TOKEN`, `WEBHOOK_SECRET`, `BOOTSTRAP_PRIVILEGED_IDS`.
-- Privilege storage: KV binding **`PRIV_KV`** (`user_<tgId>` keys).
-- Bot API: `edge-functions/lib/telegram-api.js` — never hardcode tokens.
-- Webhook entry: `edge-functions/api/telegram.js` only; keep business logic in `lib/`.
+- Import helpers with **relative paths** under `edge-functions/`.
+- Edge runtime: Web APIs (`fetch`, `Request`, `Response`). No Node built-ins unless moved to cloud-functions.
+- Secrets only via env: `BOT_TOKEN`, `WEBHOOK_SECRET`, etc. Never hardcode tokens.
+- KV (`PRIV_KV`) is **optional**; required only for `/grant` / `/revoke` dynamic lists.
+- Public `/help` must not advertise private-mode admin commands.
 
 ## Behaviour
 
-1. Convert X / Bluesky / Zhihu share links to fix instances.
-2. Expand `b23.tv` via HTTP redirect → clean `bilibili.com` (`lib/bilibili.js`).
-3. Privileged X media extraction is **disabled** (commented in `handle-message.js`).
+1. If `PRIVILEGED_ONLY` and user not allowlisted → no reply.
+2. Convert X / Bluesky / Zhihu / Bilibili (b23) links; reply with plain URLs.
+3. Silent when nothing to convert.

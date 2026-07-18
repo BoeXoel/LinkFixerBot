@@ -1,5 +1,5 @@
 /**
- * Runtime config from EdgeOne env bindings.
+ * Runtime config from EdgeOne (or other host) environment bindings.
  * @param {Record<string, string | undefined>} env
  */
 export function loadConfig(env = {}) {
@@ -12,19 +12,27 @@ export function loadConfig(env = {}) {
     .map(Number)
     .filter((n) => Number.isFinite(n));
 
+  // Default off: anyone can use the bot. When true, only privileged users get replies.
+  const privilegedOnly = parseBool(env.PRIVILEGED_ONLY, false);
+
   return {
     botToken,
     webhookSecret,
     bootstrapPrivilegedIds: bootstrap,
-    /** FxTwitter / FixupX JSON API */
-    fxTwitterApi: env.FX_TWITTER_API || 'https://api.fxtwitter.com',
-    maxMediaPerStatus: Number(env.MAX_MEDIA_PER_STATUS) || 10,
-    /**
-     * Prefer downloading media bytes and re-uploading to Telegram (more reliable).
-     * Set MEDIA_MODE=url to only pass remote URLs to Bot API.
-     */
-    mediaMode: (env.MEDIA_MODE || 'upload').toLowerCase() === 'url' ? 'url' : 'upload',
+    privilegedOnly,
   };
+}
+
+/**
+ * @param {string | undefined} value
+ * @param {boolean} fallback
+ */
+function parseBool(value, fallback) {
+  if (value == null || String(value).trim() === '') return fallback;
+  const v = String(value).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(v)) return true;
+  if (['0', 'false', 'no', 'off'].includes(v)) return false;
+  return fallback;
 }
 
 export function assertBotToken(config) {

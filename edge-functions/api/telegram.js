@@ -4,14 +4,13 @@
  * Route: POST /api/telegram
  *
  * Env:
- *   BOT_TOKEN                 — BotFather API token
- *   WEBHOOK_SECRET            — optional; must match setWebhook secret_token
- *   BOOTSTRAP_PRIVILEGED_IDS  — comma-separated user ids
- *   MEDIA_MODE                — upload (default) | url
- *   FX_TWITTER_API            — optional override
+ *   BOT_TOKEN                  — BotFather API token (required)
+ *   WEBHOOK_SECRET             — optional; must match setWebhook secret_token
+ *   PRIVILEGED_ONLY            — "true" to allow only privileged users (default off)
+ *   BOOTSTRAP_PRIVILEGED_IDS   — comma-separated Telegram user ids (allowlist seed)
  *
- * KV binding:
- *   PRIV_KV — namespace for privilege list (variable name when binding)
+ * Optional KV binding (only if you use /grant, /revoke, or dynamic allowlist):
+ *   PRIV_KV
  */
 
 import { loadConfig } from '../lib/config.js';
@@ -19,12 +18,11 @@ import { createTelegram } from '../lib/telegram-api.js';
 import { handleUpdate } from '../lib/handle-update.js';
 
 /**
- * Resolve KV binding. EdgeOne injects the bound variable as a global (e.g. PRIV_KV)
- * and may also expose env.PRIV_KV depending on runtime.
+ * Resolve optional KV binding. EdgeOne may inject PRIV_KV as a global
+ * and/or under env.PRIV_KV.
  */
 function resolveKv(env) {
   try {
-    // globalThis.PRIV_KV avoids ReferenceError when the binding is not declared
     const g = globalThis.PRIV_KV;
     if (g) return g;
   } catch {
@@ -43,7 +41,6 @@ export async function onRequestPost(context) {
     return new Response('BOT_TOKEN not configured', { status: 500 });
   }
 
-  // Verify Telegram secret_token header when configured
   if (config.webhookSecret) {
     const header = request.headers.get('X-Telegram-Bot-Api-Secret-Token') || '';
     if (header !== config.webhookSecret) {
@@ -66,7 +63,7 @@ export async function onRequestPost(context) {
     console.error('handleUpdate error', err);
   });
 
-  // Extend lifetime for media download/upload when supported
+  // Prefer fast 200 for Telegram when waitUntil is available
   if (typeof waitUntil === 'function') {
     waitUntil(task);
     return new Response('ok');

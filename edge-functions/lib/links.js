@@ -242,18 +242,3 @@ function urlsEqualLoose(a, b) {
   }
 }
 
-/**
- * @param {Awaited<ReturnType<typeof convertMessageLinks>>} links
- * @returns {string[]}
- */
-export function uniqueXStatusIds(links) {
-  const ids = [];
-  const seen = new Set();
-  for (const l of links) {
-    if (l.kind === 'x' && l.statusId && !seen.has(l.statusId)) {
-      seen.add(l.statusId);
-      ids.push(l.statusId);
-    }
-  }
-  return ids;
-}

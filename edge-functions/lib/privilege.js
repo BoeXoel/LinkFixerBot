@@ -1,8 +1,8 @@
 /**
- * Privilege list: bootstrap env IDs + EdgeOne KV namespace.
+ * Privileged user list: env bootstrap IDs + optional EdgeOne KV (`PRIV_KV`).
  *
- * Bind a KV namespace to this project with variable name `PRIV_KV`
- * (or pass any object with get/put/delete/list).
+ * KV is optional. Use it only if you want /grant and /revoke without redeploying.
+ * For a fixed allowlist, set BOOTSTRAP_PRIVILEGED_IDS alone.
  */
 
 const KEY_PREFIX = 'user_';
