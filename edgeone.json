@@ -1,6 +1,6 @@
 {
   "name": "link-fixer",
-  "description": "Telegram bot: rewrite social share links + optional X media for privileged users",
+  "description": "Telegram bot that rewrites social share links (X, Bluesky, Zhihu, bilibili short links)",
   "buildCommand": "",
   "installCommand": "",
   "outputDirectory": "public"

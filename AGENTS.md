@@ -2,7 +2,7 @@
 
 Telegram link-fixer bot on **EdgeOne Makers Edge Functions**.
 
-For the Telegram Serverless archive, see [`../tgcloud`](../tgcloud).
+Guidance for AI/agent contributors in this repository (self-contained; no sibling monorepo paths).
 
 ## Rules
 
