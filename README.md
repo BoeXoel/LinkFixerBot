@@ -5,6 +5,14 @@ Designed to run on [EdgeOne Makers](https://pages.edgeone.ai/) **Edge Functions*
 
 This repository is a **self-host template**. Deploy your own instance; do not treat other people’s production bots as a free public service.
 
+## Deploy to EdgeOne
+
+[![Deploy with EdgeOne Makers](https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg)](https://edgeone.ai/pages/new?repository-url=https%3A%2F%2Fgithub.com%2FBoeXoel%2FLinkFixerBot&project-name=link-fixer&output-directory=public&env=BOT_TOKEN%2CWEBHOOK_SECRET&env-description=BOT_TOKEN%20%28required%29%3A%20HTTP%20API%20token%20from%20%40BotFather.%20WEBHOOK_SECRET%20%28recommended%29%3A%20random%20string%20for%20setWebhook%20secret_token.%20Optional%3A%20PRIVILEGED_ONLY%2C%20BOOTSTRAP_PRIVILEGED_IDS%20%E2%80%94%20see%20README.&env-link=https%3A%2F%2Fgithub.com%2FBoeXoel%2FLinkFixerBot%23quick-start)
+
+After the site deploys, you still need to call Telegram `setWebhook` once (see [Quick start](#quick-start)). EdgeOne cannot set the webhook for you.
+
+Official docs: [Deploy button](https://pages.edgeone.ai/zh/document/deploy-button).
+
 ## Features
 
 | Source | Result |
