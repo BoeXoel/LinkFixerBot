@@ -109,7 +109,7 @@ curl -sS "https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo"
 - [fxzhihu](https://github.com/frostming/fxzhihu) — Zhihu fix instances  
 - [b23.tv-tools](https://github.com/SunsetMkt/b23.tv-tools), [b23.wtf](https://github.com/nicholascw/b23.wtf) — ideas for short-link expansion & tracking cleanup  
 - [EdgeOne Makers](https://pages.edgeone.ai/) — hosting  
-- Development assistance from **Grok** ([xAI](https://x.ai/)) — commits may include a `Co-authored-by` trailer so GitHub can attribute co-authorship
+- Development assistance from **Grok** ([xAI](https://x.ai/))
 
 ## License
 
