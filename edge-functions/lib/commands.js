@@ -13,8 +13,15 @@ Send a share link — I rewrite it to a cleaner public URL:
 • <code>x.com</code> → <code>fixupx.com</code>
 • <code>twitter.com</code> → <code>fxtwitter.com</code>
 • <code>bsky.app</code> → <code>fxbsky.app</code>
-• <code>zhihu.com</code> → <code>fxzhihu.com</code>
-• <code>b23.tv</code> → clean <code>bilibili.com</code> (tracking removed)
+• <code>zhihu.com</code> → <code>www.fxzhihu.com</code>
+• <code>b23.tv</code> / <code>bilibili.com</code> → clean <code>bilibili.com</code>
+• <code>xhslink.com</code> / <code>xiaohongshu.com</code> → clean <code>xiaohongshu.com</code>
+• <code>mp.weixin.qq.com</code> → clean WeChat article URL
+• <code>tieba.baidu.com</code> → clean post URL
+• <code>t.cn</code> / <code>weibo.com</code> → clean Weibo URL
+• <code>m.tb.cn</code> / <code>taobao.com</code> / <code>tmall.com</code> → clean item URL
+• <code>3.cn</code> / <code>u.jd.com</code> / <code>jd.com</code> → clean <code>item.jd.com</code>
+• <code>yangkeduo.com</code> → clean Pinduoduo goods URL
 
 Just paste one or more links. I only reply when a supported link is found.
 

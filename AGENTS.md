@@ -11,8 +11,9 @@ A Telegram **link-fixer** bot on EdgeOne Edge Functions: rewrite share links to 
 | Path | Role |
 |------|------|
 | `edge-functions/api/telegram.js` | Webhook entry |
-| `edge-functions/lib/links.js` | Sync rewrites + async b23 resolution |
+| `edge-functions/lib/links.js` | Sync rewrites + async short-link resolution |
 | `edge-functions/lib/bilibili.js` | b23 expand + bilibili tracker strip |
+| `edge-functions/lib/cleaners.js` | Xiaohongshu, WeChat, Tieba, Weibo, Pinduoduo, Taobao/Tmall, JD cleaners & short-link expand |
 | `edge-functions/lib/privilege.js` | Allowlist (env + optional KV) |
 | `edge-functions/lib/config.js` | Env → config (`PRIVILEGED_ONLY`, …) |
 | `public/` | Static landing only |

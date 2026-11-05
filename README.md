@@ -17,12 +17,19 @@ Official docs: [Deploy button](https://pages.edgeone.ai/zh/document/deploy-butto
 
 | Source | Result |
 |--------|--------|
-| `x.com` | `fixupx.com` |
-| `twitter.com` | `fxtwitter.com` |
+| `x.com` | `fixupx.com` (all query params stripped) |
+| `twitter.com` | `fxtwitter.com` (all query params stripped) |
 | `bsky.app` | `fxbsky.app` |
-| `zhihu.com` / `zhuanlan.zhihu.com` | `fxzhihu.com` / `zhuanlan.fxzhihu.com` |
+| `zhihu.com` / `zhuanlan.zhihu.com` | `www.fxzhihu.com` / `zhuanlan.fxzhihu.com` |
 | `b23.tv` (and similar short hosts) | clean `bilibili.com` (tracking removed) |
 | Long `bilibili.com` links with trackers | same cleaning (`p=1` dropped; `p≥2` and `t` kept) |
+| `xhslink.com` / `xiaohongshu.com` | `www.xiaohongshu.com/explore/{id}` (keeps `xsec_token` & `xsec_source` only) |
+| `mp.weixin.qq.com` | keeps `__biz`, `mid`, `idx`, `sn` (or `/s/{code}` path only) |
+| `tieba.baidu.com` | `tieba.baidu.com/p/{id}` (query stripped) |
+| `t.cn` / `weibo.com` / `m.weibo.cn` | clean Weibo status path (query stripped) |
+| `mobile.yangkeduo.com` | `mobile.yangkeduo.com/goods.html?goods_id={id}` |
+| `m.tb.cn` / `s.click.taobao.com` / `item.taobao.com` / `detail.tmall.com` | clean product URL with `?id={id}` only |
+| `3.cn` / `u.jd.com` / `item.jd.com` / `item.m.jd.com` | `item.jd.com/{id}.html` |
 
 - Replies with **plain URLs** only (easy to copy).
 - Stays silent when the message has no supported links.

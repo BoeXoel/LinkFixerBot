@@ -1,7 +1,7 @@
 /**
  * Detect share links and rewrite to cleaner / fix-instance URLs.
- * Sync rewrites: X, Bluesky, Zhihu, bilibili.com trackers.
- * Async: b23.tv short links (see convertMessageLinks).
+ * Sync rewrites: X, Bluesky, Zhihu, bilibili.com, Xiaohongshu, WeChat, Tieba, Weibo, Pinduoduo, Taobao/Tmall, JD.
+ * Async: b23.tv and domestic platform short links (xhslink.com, m.tb.cn, s.click.taobao.com, 3.cn, u.jd.com, t.cn).
  */
 
 import {
@@ -11,12 +11,18 @@ import {
   cleanBilibiliUrl,
   resolveB23,
 } from './bilibili.js';
+import {
+  getShortLinkKind,
+  getPlatformKind,
+  cleanPlatformUrl,
+  resolvePlatformShortLink,
+} from './cleaners.js';
 
 const STATUS_ID_RE = /\/(?:status|statuses)\/(\d{5,20})(?:\/|$|\?|#)/i;
 
-/** Match absolute http(s) URLs in free text (fallback when entities are missing). */
+/** Match absolute http(s) URLs in free text (fallback when entities are missing or glued to CJK text). */
 const LOOSE_URL_RE =
-  /https?:\/\/(?:www\.)?(?:(?:mobile\.)?(?:x|twitter)\.com|t\.co|bsky\.app|fxbsky\.app|fxtwitter\.com|fixupx\.com|vxtwitter\.com|twittpr\.com|(?:www\.)?zhihu\.com|zhuanlan\.zhihu\.com|fxzhihu\.com|zhuanlan\.fxzhihu\.com|b23\.tv|bili2233\.cn|bili2233\.com|(?:[\w-]+\.)?bilibili\.com)[^\s<>"')\]]*/gi;
+  /https?:\/\/(?:www\.)?(?:(?:mobile\.)?(?:x|twitter)\.com|t\.co|bsky\.app|fxbsky\.app|fxtwitter\.com|fixupx\.com|vxtwitter\.com|twittpr\.com|(?:www\.)?zhihu\.com|zhuanlan\.zhihu\.com|(?:www\.)?fxzhihu\.com|zhuanlan\.fxzhihu\.com|b23\.tv|b23\.wtf|bili2233\.cn|bili2233\.com|(?:[\w-]+\.)?bilibili\.com|xhslink\.com|(?:[\w-]+\.)?xiaohongshu\.com|mp\.weixin\.qq\.com|w\.url\.cn|(?:c\.|wapp\.)?tieba\.baidu\.com|t\.cn|(?:[\w-]+\.)?weibo\.(?:com|cn)|(?:[\w-]+\.)?(?:yangkeduo|pinduoduo)\.com|(?:m\.)?tb\.cn|s\.click\.taobao\.com|(?:[\w-]+\.)?taobao\.com|(?:[\w-]+\.)?tmall\.(?:com|hk)|3\.cn|u\.jd\.com|(?:[\w-]+\.)?(?:jd|yiyaojd)\.com|npcitem\.jd\.hk)[^\s<>"')\]\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]*/gi;
 
 /**
  * Extract raw URL strings from a Telegram Message.
@@ -36,7 +42,7 @@ export function extractUrls(message) {
     }
   }
 
-  if (found.length === 0 && text) {
+  if (text) {
     const matches = text.match(LOOSE_URL_RE);
     if (matches) found.push(...matches);
   }
@@ -53,7 +59,9 @@ export function extractUrls(message) {
 }
 
 function stripTrailingPunct(url) {
-  return url.replace(/[),.;!?'"»]+$/g, '');
+  // Cut at any CJK / fullwidth punctuation that may stick to share text, then strip ASCII trailing punctuation
+  const asciiPart = url.split(/[\s<>"')\]\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/)[0];
+  return asciiPart.replace(/[),.;!?'"»]+$/g, '');
 }
 
 function tryParse(raw) {
@@ -98,6 +106,19 @@ export function convertLink(raw) {
     };
   }
 
+  // --- Domestic platform short link (xhslink.com, m.tb.cn, s.click.taobao.com, 3.cn, u.jd.com, t.cn): resolve async ---
+  const shortKind = getShortLinkKind(url.hostname);
+  if (shortKind) {
+    return {
+      original: raw,
+      converted: null,
+      kind: shortKind,
+      statusId: null,
+      changed: false,
+      needsResolve: true,
+    };
+  }
+
   // --- Bilibili long link: strip trackers only ---
   if (isBilibiliHost(url.hostname) || isBilibiliHost(host)) {
     if (bilibiliNeedsClean(url.toString())) {
@@ -118,6 +139,29 @@ export function convertLink(raw) {
       kind: 'bilibili',
       statusId: null,
       changed: false,
+    };
+  }
+
+  // --- Domestic platform long link (Xiaohongshu, WeChat, Tieba, Weibo, Pinduoduo, Taobao/Tmall, JD) ---
+  const platformKind = getPlatformKind(url.hostname);
+  if (platformKind) {
+    const { kind: pKind, cleaned } = cleanPlatformUrl(url, platformKind);
+    if (!cleaned) {
+      return {
+        original: raw,
+        converted: null,
+        kind: pKind,
+        statusId: null,
+        changed: false,
+      };
+    }
+    const changed = cleaned.replace(/\/$/, '') !== raw.replace(/\/$/, '');
+    return {
+      original: raw,
+      converted: changed ? cleaned : null,
+      kind: pKind,
+      statusId: null,
+      changed,
     };
   }
 
@@ -142,13 +186,13 @@ export function convertLink(raw) {
     convertedHost = 'fxbsky.app';
   } else if (host === 'fxbsky.app') {
     kind = 'bluesky';
-  } else if (host === 'zhihu.com') {
+  } else if (host === 'zhihu.com' || url.hostname.toLowerCase() === 'fxzhihu.com') {
     kind = 'zhihu';
-    convertedHost = 'fxzhihu.com';
+    convertedHost = 'www.fxzhihu.com';
   } else if (host === 'zhuanlan.zhihu.com') {
     kind = 'zhihu';
     convertedHost = 'zhuanlan.fxzhihu.com';
-  } else if (host === 'fxzhihu.com' || host === 'zhuanlan.fxzhihu.com') {
+  } else if (url.hostname.toLowerCase() === 'www.fxzhihu.com' || host === 'zhuanlan.fxzhihu.com') {
     kind = 'zhihu';
   }
 
@@ -164,15 +208,19 @@ export function convertLink(raw) {
 
   const out = new URL(url.toString());
   out.hostname = convertedHost;
-  for (const key of [...out.searchParams.keys()]) {
-    if (
-      key === 's' ||
-      key === 't' ||
-      key.startsWith('utm_') ||
-      key === 'ref_src' ||
-      key === 'ref_url'
-    ) {
-      out.searchParams.delete(key);
+  if (kind === 'x') {
+    out.search = '';
+  } else {
+    for (const key of [...out.searchParams.keys()]) {
+      if (
+        key === 's' ||
+        key === 't' ||
+        key.startsWith('utm_') ||
+        key === 'ref_src' ||
+        key === 'ref_url'
+      ) {
+        out.searchParams.delete(key);
+      }
     }
   }
 
@@ -187,7 +235,7 @@ export function convertLink(raw) {
 }
 
 /**
- * Convert all extractable URLs, including async b23 resolution.
+ * Convert all extractable URLs, including async b23 and domestic short-link resolution.
  * @param {object} message
  */
 export async function convertMessageLinks(message) {
@@ -211,6 +259,27 @@ export async function convertMessageLinks(message) {
           original: raw,
           converted: null,
           kind: 'bilibili',
+          statusId: null,
+          changed: false,
+          error: resolved.error,
+        };
+      }
+      if (base.needsResolve) {
+        const resolved = await resolvePlatformShortLink(raw);
+        if (resolved.ok) {
+          return {
+            original: raw,
+            converted: resolved.url,
+            kind: resolved.kind || base.kind,
+            statusId: null,
+            changed: true,
+          };
+        }
+        console.warn('short link resolve failed', raw, resolved.error);
+        return {
+          original: raw,
+          converted: null,
+          kind: base.kind,
           statusId: null,
           changed: false,
           error: resolved.error,
